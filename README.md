@@ -43,4 +43,7 @@ docker run --rm cih9088/machine-status:v0.1 server -h
 ```bash
 # Edit deployments/k8s_example.yaml first then
 kubectl create -f deployments/k8s_example.yaml
+
+# set label for node you want to expote
+kubectl label node ${NODE} mstat-exporter=true
 ```
