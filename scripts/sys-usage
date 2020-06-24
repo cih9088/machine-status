@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd)"
+################## Color ##########################
+
+# Reset
+Color_Off='[0m'       # Text Reset
+
+# Bold High Intensity
+BIWhite='[1;97m'      # White
+
+##################################################
+
+case "$OSTYPE" in
+    solaris*) platform="SOLARIS" ;;
+    darwin*)  platform="OSX" ;;
+    linux*)   platform="LINUX" ;;
+    bsd*)     platform="BSD" ;;
+    msys*)    platform="WINDOWS" ;;
+    *)        platform="unknown: $OSTYPE" ;;
+esac
+
+if [[ $platform != LINUX ]]; then
+    echo "This script dose not support $platform." >&2
+    exit 1
+fi
+
+coproc gpudetailfd { ${DIR}/gpustat --no-header -c | sed 's/^/        /'; }
+exec 3>&${gpudetailfd[0]}
+hostname="$(hostname)"
+now="$(date)"
+echo "${BIWhite}${hostname}${Color_Off} ${now}"
+echo -en "   CPU: " && ${DIR}/cpu-usage | ${DIR}/ascii-bar 40
+echo
+echo -en "   MEM: " && ${DIR}/mem-usage | ${DIR}/ascii-bar 40
+echo
+echo -en "   GPU: " && ${DIR}/gpu-usage | ${DIR}/ascii-bar 40
+echo
+echo "$(cat <&3)"
