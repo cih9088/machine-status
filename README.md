@@ -1,29 +1,29 @@
 # machine-status
 ![screenshot](https://imgur.com/kFTAvDS.png)
 
-A web interface for several machines with GPUs. It is largely inspired by [gpustat](https://github.com/wookayin/gpustat-web)
+A web interface for GPU machines that is largely inspired by [gpustat-web](https://github.com/wookayin/gpustat-web)
 
 ## How to use
 
 ### For Docker
 #### Exporter
 ```bash
-# on each machines you want to monitor
+# on each machine you want to export status
 docker run -p 9200:9200 -d --pid=host --hostname=$(hostname) \
        --name mstat-exporter --restart always cih9088/machine-status:v0.1 \
        exporter
 
-# if you want another port to use
+# use another port rather than default one
 docker run -p ${custom_port}:${custom_port} -d --pid=host --hostname=$(hostname) \
        --name mstat-exporter --restart always cih9088/machine-status:v0.1 \
        exporter --port ${custom_port}
 
-# check exporter parameter
+# help for exporter
 docker run --rm cih9088/machine-status:v0.1 exporter -h
 ```
 
 #### Server
-Change user, pass and machine as you wish.
+Change user, pass, machine, and etc. as you wish.
 ```bash
 # on web server hosting machine
 docker run -p 80:80 \
@@ -35,7 +35,7 @@ docker run -p 80:80 \
               --machine machine2.example.com:9200 \
               --machine machine3.example.com:9200
 
-# check server parameter
+# help for server
 docker run --rm cih9088/machine-status:v0.1 server -h
 ```
 
@@ -44,6 +44,6 @@ docker run --rm cih9088/machine-status:v0.1 server -h
 # Edit deployments/k8s_example.yaml first then
 kubectl create -f deployments/k8s_example.yaml
 
-# set label for node you want to expote
+# set label for node you want to export
 kubectl label node ${NODE} mstat-exporter=true
 ```

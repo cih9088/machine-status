@@ -385,7 +385,7 @@ var indexPage = template.Must(template.New("").Parse(`
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<title>server-status</title>
+	<title>machine-status</title>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 <!--===============================================================================================-->
@@ -446,8 +446,8 @@ var indexPage = template.Must(template.New("").Parse(`
 						</div>
 
 					<div class="text-center p-t-115">
-						<a class="txt2" href="https://github.com/cih9088/server-status">
-							server-status
+						<a class="txt2" href="https://github.com/cih9088/machine-status">
+							machine-status
 						</a>
 						<span class="txt1">
 							by andy
@@ -488,7 +488,7 @@ var dashboardPage = template.Must(template.New("").Parse(`
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<title>server-status</title>
+	<title>machine-status</title>
 	<link rel="stylesheet" type="text/css" href="{{.Web}}/css/mystyle.css">
 	<link rel="icon" type="image/png" href="{{.Web}}/images/icons/favicon.ico"/>
 	<script type="text/javascript">

@@ -55,17 +55,17 @@ spec:
     imagePullPolicy: Always
     args: ["server",
         '--wss',
-        "--host", "example.com",
+        "--host", "server.example.com",
         "--root", "mstat",
         "--user", "user1",
-        "--pass", "user2",
+        "--pass", "user1",
         "--machine", "machine1.example.com:9200",
         "--machine", "machine2.example.com:9200",
         "--machine", "machine3.example.com:9200",
         ]
     ports:
-        - name: http
-          containerPort: 80
+    - name: http
+      containerPort: 80
 ---
 apiVersion: v1
 kind: Service
@@ -95,9 +95,9 @@ metadata:
 spec:
   tls:
   - hosts:
-    - example.com
+    - server.example.com
   rules:
-  - host: example.com
+  - host: server.example.com
     http:
       paths:
       - path: /mstat(/|$)(.*)
