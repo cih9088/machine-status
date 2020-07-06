@@ -249,12 +249,12 @@ func serverWSHandler(w http.ResponseWriter, r *http.Request) {
 						isConnOpens[machine] = false
 						log.Warnf("Write to exporter machine %s failed: %s", machine, err)
 					}
-					mt, message, err = conn.ReadMessage()
+					_, exporter_m, err := conn.ReadMessage()
 					if err != nil {
 						isConnOpens[machine] = false
 						log.Warnf("Read from exporter machine %s failed: %s", machine, err)
 					}
-					cha <- string(message)
+					cha <- string(exporter_m)
 				}(machineConns[machine], machineChans[machine], isConnOpens, machine)
 			}
 		}
