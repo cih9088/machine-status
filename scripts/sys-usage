@@ -4,9 +4,7 @@ DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd)"
 
 # Reset
 Color_Off='[0m'       # Text Reset
-
-# Bold High Intensity
-BIWhite='[1;97m'      # White
+Bold='[1m'       # Text Reset
 
 ##################################################
 
@@ -28,7 +26,7 @@ coproc gpudetailfd { ${DIR}/gpustat --no-header -c | sed 's/^/        /'; }
 exec 3>&${gpudetailfd[0]}
 hostname="$(hostname)"
 now="$(date)"
-echo "${BIWhite}${hostname}${Color_Off} ${now}"
+echo "${Bold}${hostname}${Color_Off} ${now}"
 echo -en "   CPU: " && ${DIR}/cpu-usage | ${DIR}/ascii-bar 40
 echo
 echo -en "   MEM: " && ${DIR}/mem-usage | ${DIR}/ascii-bar 40

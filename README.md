@@ -3,6 +3,9 @@
 
 A web interface for GPU machines that is largely inspired by [gpustat-web](https://github.com/wookayin/gpustat-web)
 
+## Prerequisites
+[nvidia-docker2](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)
+
 ## How to use
 
 ### For Docker
@@ -10,12 +13,12 @@ A web interface for GPU machines that is largely inspired by [gpustat-web](https
 ```bash
 # on each machine you want to export status
 docker run -p 9200:9200 -d --pid=host --hostname=$(hostname) \
-       --name mstat-exporter --restart always cih9088/machine-status:0.2 \
+       --name mstat-exporter --restart always --gpus all cih9088/machine-status:0.2 \
        exporter
 
 # use another port rather than default one
 docker run -p ${custom_port}:${custom_port} -d --pid=host --hostname=$(hostname) \
-       --name mstat-exporter --restart always cih9088/machine-status:0.2 \
+       --name mstat-exporter --restart always --gpus all cih9088/machine-status:0.2 \
        exporter --port ${custom_port}
 
 # help for exporter

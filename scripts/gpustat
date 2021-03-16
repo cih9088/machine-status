@@ -5,33 +5,33 @@ trap "echo 'error: Script failed: see failed command above'" ERR
 IFS=$'\n\t'
 
 # Reset
-Reset='[0m'       # Text Reset
-Bold='[1m'       # Text Reset
-Dark='[2m'       # Text Reset
+Reset='[0m'       # Text Reset
+Bold='[1m'       # Text Reset
+Dark='[2m'       # Text Reset
 
 # Regular Colors
-Red='[0;31m'          # Red
-Green='[0;32m'        # Green
-Yellow='[0;33m'       # Yellow
-Blue='[0;34m'         # Blue
-Purple='[0;35m'       # Purple
-Cyan='[0;36m'         # Cyan
+Red='[0;31m'          # Red
+Green='[0;32m'        # Green
+Yellow='[0;33m'       # Yellow
+Blue='[0;34m'         # Blue
+Purple='[0;35m'       # Purple
+Cyan='[0;36m'         # Cyan
 
 # Bold
-BRed='[1;31m'         # Red
-BGreen='[1;32m'       # Green
-BYellow='[1;33m'      # Yellow
-BBlue='[1;34m'        # Blue
-BPurple='[1;35m'      # Purple
-BCyan='[1;36m'        # Cyan
+BRed='[1;31m'         # Red
+BGreen='[1;32m'       # Green
+BYellow='[1;33m'      # Yellow
+BBlue='[1;34m'        # Blue
+BPurple='[1;35m'      # Purple
+BCyan='[1;36m'        # Cyan
 
 # High Intensity
-IRed='[0;91m'         # Red
-IGreen='[0;92m'       # Green
-IYellow='[0;93m'      # Yellow
-IBlue='[0;94m'        # Blue
-IPurple='[0;95m'      # Purple
-ICyan='[0;96m'        # Cyan
+IRed='[0;91m'         # Red
+IGreen='[0;92m'       # Green
+IYellow='[0;93m'      # Yellow
+IBlue='[0;94m'        # Blue
+IPurple='[0;95m'      # Purple
+ICyan='[0;96m'        # Cyan
 
 vercomp () {
   if [[ $1 == $2 ]]; then

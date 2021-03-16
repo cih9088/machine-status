@@ -1,7 +1,7 @@
 FROM nvidia/cuda:10.1-base-ubuntu18.04
 MAINTAINER Andy Cho <cih9088@gmail.com>
 
-RUN apt-get update && apt-get install -y wget gawk tzdata && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y wget gawk tzdata binutils && rm -rf /var/lib/apt/lists/*
 
 ENV TZ='Asia/Seoul'
 RUN ln -snf /usr/share/zoninfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
