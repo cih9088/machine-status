@@ -13,13 +13,19 @@ A web interface for GPU machines that is largely inspired by [gpustat-web](https
 ```bash
 # on each machine you want to export status
 docker run -p 9200:9200 -d --pid=host --hostname=$(hostname) \
-       --name mstat-exporter --restart always --gpus all cih9088/machine-status:0.2 \
-       exporter
+    --name mstat-exporter --restart always --gpus all cih9088/machine-status:0.2 \
+    exporter
 
 # use another port rather than default one
-docker run -p ${custom_port}:${custom_port} -d --pid=host --hostname=$(hostname) \
-       --name mstat-exporter --restart always --gpus all cih9088/machine-status:0.2 \
-       exporter --port ${custom_port}
+docker run -p 9999:9999 -d --pid=host --hostname=$(hostname) \
+    --name mstat-exporter --restart always --gpus all cih9088/machine-status:0.2 \
+    exporter --port 9999
+
+# change timezone
+docker run -p 9200:9200 -d --pid=host --hostname=$(hostname) \
+    --env TZ="Europe/London" \
+    --name mstat-exporter --restart always --gpus all cih9088/machine-status:0.2 \
+    exporter
 
 # help for exporter
 docker run --rm cih9088/machine-status:0.2 exporter -h
@@ -30,13 +36,13 @@ Change user, pass, machine, and etc. as you wish.
 ```bash
 # on web server hosting machine
 docker run -p 80:80 \
-       --name mstat-server --restart always cih9088/machine-status:0.2 \
-       server --host $(hostname --fqdn) \
-              --user user1,user2 \
-              --pass pass1,pass2 \
-              --machine machine1.example.com:9200 \
-              --machine machine2.example.com:9200 \
-              --machine machine3.example.com:9200
+    --name mstat-server --restart always cih9088/machine-status:0.2 \
+    server --host $(hostname --fqdn) \
+        --user user1,user2 \
+        --pass pass1,pass2 \
+        --machine machine1.example.com:9200 \
+        --machine machine2.example.com:9200 \
+        --machine machine3.example.com:9200
 
 # help for server
 docker run --rm cih9088/machine-status:0.2 server -h

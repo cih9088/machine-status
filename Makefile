@@ -9,9 +9,6 @@ build:
 build-nocache:
 	docker build -t $(NAME):$(VERSION) --no-cache --rm .
 
-test:
-	env NAME=$(NAME) VERSION=$(VERSION) bats test/test.bats
-
 tag:
 	docker tag $(NAME):$(VERSION) $(NAME):$(VERSION)
 
@@ -24,7 +21,7 @@ push:
 push-latest:
 	docker push $(NAME):latest
 
-release: build test tag-latest push push-latest
+release: build tag-latest push push-latest
 
 git-tag-version: release
 	git tag -a v$(VERSION) -m "v$(VERSION)"
