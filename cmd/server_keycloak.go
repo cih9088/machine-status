@@ -272,10 +272,6 @@ func init() {
 		"keycloak client secret")
 }
 
-func (o *KeycloakOptions) notFound(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, o.Rootpage, 302)
-}
-
 // server main method
 func (o *KeycloakOptions) Run(cmd *cobra.Command, args []string) {
 	// assert options
@@ -319,7 +315,6 @@ func (o *KeycloakOptions) Run(cmd *cobra.Command, args []string) {
 	router.HandleFunc("/dashboard", o.dashboardHandler)
 	router.HandleFunc("/login", o.loginHandler).Methods("POST")
 	router.HandleFunc("/logout", o.logoutHandler).Methods("POST")
-	router.NotFoundHandler = http.HandlerFunc(o.notFound)
 
 	http.Handle("/web/", http.StripPrefix("/web/", http.FileServer(http.Dir("./web"))))
 	http.Handle("/", router)

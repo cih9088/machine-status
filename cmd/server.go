@@ -49,10 +49,6 @@ var (
 	trigerConnect = make(chan int)
 )
 
-func notFound(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "/", 404)
-}
-
 func clearSession(response http.ResponseWriter) {
 	cookie := &http.Cookie{
 		Name:   "session",

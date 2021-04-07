@@ -1,18 +1,35 @@
-FROM nvidia/cuda:10.1-base-ubuntu18.04
-MAINTAINER Andy Cho <cih9088@gmail.com>
+# Build image for builder
+FROM golang:alpine AS builder
+WORKDIR /app
+
+# Set necessary environmet variables needed for our image
+ENV GO111MODULE=on \
+    CGO_ENABLED=0 \
+    GOOS=linux \
+    GOARCH=amd64
+
+# Copy and download dependency using go mod
+COPY go.mod .
+COPY go.sum .
+RUN go mod download
+
+# Copy the code into the container
+COPY . .
+
+# Build the application
+RUN go build -o /app/mstat .
+
+FROM ubuntu:20.04
+WORKDIR /app
 
 RUN apt-get update && apt-get install -y wget gawk tzdata binutils && rm -rf /var/lib/apt/lists/*
 
+# Default timezone
 ENV TZ='Asia/Seoul'
 RUN ln -snf /usr/share/zoninfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-RUN wget https://dl.google.com/go/go1.14.2.linux-amd64.tar.gz
-RUN tar -C /usr/local -xzf go1.14.2.linux-amd64.tar.gz
-ENV PATH="${PATH}:/usr/local/go/bin"
-RUN mkdir /app
-WORKDIR /app
-RUN go mod init github.com/cih9088/machine-status
+COPY scripts ./scripts
+COPY web ./web
+COPY --from=builder /app/mstat /app/mstat
 
-ADD . ./
-
-ENTRYPOINT [ "go", "run", "main.go" ]
+ENTRYPOINT [ "/app/mstat" ]
