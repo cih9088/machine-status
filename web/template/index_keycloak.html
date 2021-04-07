@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>machine-status</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="{{.Web}}/css/mystyle.css">
+    <link rel="icon" type="image/png" href="{{.Web}}/images/icons/favicon.ico"/>
+    <script src="{{.KeycloakServer}}/auth/js/keycloak.js"></script>
+    <script>
+      var kc = new Keycloak("{{.Web}}/keycloak/keycloak.json");
+      function initKeycloak() {
+        var initOptions = {
+          onLoad: 'login-required',
+        };
+        kc.init(initOptions).success(function(authenticated) {
+          if (!authenticated) {
+            console.log("Not authenticated");
+          } else {
+            window.location.href = window.location.origin + "/dashboard";
+          }
+        });
+      }
+    </script>
+  </head>
+  <body onload="initKeycloak()">
+  </body>
+</html><!DOCTYPE html>

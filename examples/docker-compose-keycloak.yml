@@ -1,0 +1,50 @@
+services:
+  keycloak:
+    container_name: keycloak
+    hostname: keycloak.example.org
+    image: quay.io/keycloak/keycloak:12.0.4
+    environment:
+      - KEYCLOAK_USER=admin
+      - KEYCLOAK_PASSWORD=admin
+      - KEYCLOAK_IMPORT=/tmp/example_realm.json
+    volumes:
+      - ./keycloak:/tmp
+    command:
+      - -b=0.0.0.0
+      - -Djboss.http.port=8080
+      - -Djboss.https.port=8443
+    ports:
+      - 8080:8080
+
+  mstat-exporter:
+    container_name: mstat-exporter
+    image: cih9088/machine-status:0.3
+    ports:
+      - 9200:9200
+    pid: host
+    command:
+      - exporter
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            count: all
+            capabilities: [gpu, utility]
+
+  mstat-server:
+    container_name: mstat-server
+    image: cih9088/machine-status:0.3
+    ports:
+      - 9201:9201
+    command:
+      - server-keycloak
+      - --fqdn=localhost
+      - --port=9201
+      - --keycloak-server=http://localhost:8080
+      - --keycloak-client=example-client
+      - --keycloak-realm=example-realm
+      - --machine=mstat-exporter:9200
+    depends_on:
+      - keycloak
+      - mstat-exporter

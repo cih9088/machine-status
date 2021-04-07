@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>machine-status</title>
+    <link rel="stylesheet" type="text/css" href="{{.Web}}/css/mystyle.css">
+    <link rel="icon" type="image/png" href="{{.Web}}/images/icons/favicon.ico"/>
+    <script type="text/javascript">
+      window.onload = function () {
+        var conn;
+        if (window["WebSocket"]) {
+          conn = new WebSocket("{{.Ws}}");
+          conn.onopen = function (evt) {
+            console.log('websockt connection establised', conn);
+            conn.send('fetch');
+          };
+          conn.onerror = function (error) {
+            console.log("onerror", error);
+          };
+          conn.onclose = function (evt) {
+            console.log("Connection closed")
+            var item = document.getElementById("notice")
+            item.innerHTML = "<b>Connection closed</b>";
+          };
+          conn.onmessage = function (evt) {
+            var messages = JSON.parse(evt.data);
+            var item = document.getElementById(messages.Machine)
+            item.innerHTML = messages.Data;
+          };
+          window.timer = setInterval( function() { conn.send('fetch'); }, {{.Interval}} );
+        } else {
+          var item = document.createElement("div");
+          item.innerHTML = "<b>Your browser does not support WebSockets.</b>";
+        }
+      };
+    </script>
+  </head>
+  <body class="f9 eb15">
+    <div class="notice f1 b9" id="notice"></div>
+    <div id="main">
+      {{range .Machines}}
+      <div class="wrap-collabsible">
+        <input id="collapsible-{{.Machine}}" class="toggle" type="checkbox" {{.IsCollapse}}>
+        <label for="collapsible-{{.Machine}}" class="lbl-toggle">{{.Machine}}</label>
+        <div class="collapsible-content">
+          <div class="content-inner"><pre class='b9' id="{{.Machine}}"></pre></div></div></div>
+            {{end}}
+    </div>
+  </body>
+</html>

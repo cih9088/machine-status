@@ -10,6 +10,7 @@ import (
 	"time"
 
 	fqdn "github.com/Showmax/go-fqdn"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -111,6 +112,10 @@ func init() {
 }
 
 func exporterRun(cmd *cobra.Command, args []string) {
+	if rootOptions.Debug {
+		log.SetLevel(logrus.DebugLevel)
+	}
+
 	go func(cache *Cache) {
 		for {
 			cmd := exec.Command("./scripts/sys-usage")

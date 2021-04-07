@@ -1,0 +1,30 @@
+services:
+
+  mstat-exporter:
+    container_name: mstat-exporter
+    image: cih9088/machine-status:0.3
+    ports:
+      - 9200:9200
+    pid: host
+    command:
+      - exporter
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            count: all
+            capabilities: [gpu, utility]
+
+  mstat-server:
+    container_name: mstat-server
+    image: cih9088/machine-status:0.3
+    ports:
+      - 9201:9201
+    command:
+      - server-simple
+      - --fqdn=localhost
+      - --port=9201
+      - --user=user
+      - --pwd=pwd
+      - --machine=mstat-exporter:9200
