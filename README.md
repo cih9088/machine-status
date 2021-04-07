@@ -89,8 +89,10 @@ $ docker run -p 80:80 --detach --name mstat-server --restart always \
         --machine machine2.example.com:9200 \
         --machine machine3.example.com:9200
 
-# help for server
-$ docker run --rm cih9088/machine-status:0.3 server -h
+# help for simple server
+$ docker run --rm cih9088/machine-status:0.3 server-simple -h
+# help for keycloak server
+$ docker run --rm cih9088/machine-status:0.3 server-keycloak -h
 ```
 
 #### Docker compose example
@@ -102,9 +104,9 @@ $ docker-compose -f examples/docker-compose-keycloak.yml up -d
 
 # go to 'http://localhost:9201' and login with id of 'user' and password of 'pwd'
 
-# clear up simple server
+# clean up simple server
 docker-compose -f examples/docker-compose-simple.yml down
-# clear up keycloak server
+# clean up keycloak server
 docker-compose -f examples/docker-compose-keycloak.yml down
 ```
 
