@@ -1,0 +1,5 @@
+# Ignore everything
+examples/keycloak/*
+
+# But not these files...
+!examples/keycloak/example_realm.json
