@@ -5,18 +5,16 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"os/exec"
-	"strconv"
+	"strings"
 	"time"
 
 	fqdn "github.com/Showmax/go-fqdn"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
-
-type ExporterOptions struct {
-	Port int
-}
 
 type Cache struct {
 	Data []byte
@@ -24,8 +22,6 @@ type Cache struct {
 }
 
 var (
-	exporterOptions ExporterOptions
-
 	cache = Cache{
 		Time: time.Now(),
 	}
@@ -106,19 +102,59 @@ func ansi2html(data []byte) ([]byte, error) {
 }
 
 func init() {
+	viper.SetEnvPrefix("mstat")
+	viper.AutomaticEnv()
+
 	rootCmd.AddCommand(exporterCmd)
-	exporterCmd.Flags().IntVar(&exporterOptions.Port, "port", 9200,
-		"port to serve")
+	exporterCmd.Flags().Int("port", 9200, "port to serve")
+	exporterCmd.Flags().String("mapping", "", "mapping between username and UID")
+	exporterCmd.Flags().BoolP("show-user", "u", false, "show user name")
+	exporterCmd.Flags().BoolP("show-pid", "p", false, "show PID")
+	exporterCmd.Flags().BoolP("show-power", "w", false, "show power usage")
+	exporterCmd.Flags().BoolP("show-cmd", "c", true, "show command of the process")
+	exporterCmd.Flags().BoolP("show-fan", "f", false, "show fan speed")
+	viper.BindPFlags(exporterCmd.Flags())
+
+	replacer := strings.NewReplacer("-", "_")
+	viper.SetEnvKeyReplacer(replacer)
 }
 
 func exporterRun(cmd *cobra.Command, args []string) {
+
+	gpustatArgs := ""
+	for _, key := range viper.AllKeys() {
+		if key == "port" || key == "mapping" {
+			continue
+		}
+		if viper.GetBool(key) {
+			gpustatArgs += "--" + key + " "
+		}
+	}
+
+	if viper.GetString("mapping") != "" {
+		mappings := strings.Split(strings.TrimSpace(viper.GetString("mapping")), " ")
+
+		f, err := os.Create("./mapping.txt")
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer f.Close()
+
+		for i := 0; i < len(mappings); i++ {
+			mapping := strings.Split(mappings[i], ":")
+
+			fmt.Println(strings.Join(mapping, ":"))
+			f.WriteString(strings.Join(mapping, ":") + "\n")
+		}
+	}
+
 	if rootOptions.Debug {
 		log.SetLevel(logrus.DebugLevel)
 	}
 
 	go func(cache *Cache) {
 		for {
-			cmd := exec.Command("./scripts/sys-usage")
+			cmd := exec.Command("./scripts/sys-usage", gpustatArgs)
 			var out bytes.Buffer
 			cmd.Stdout = &out
 			err := cmd.Run()
@@ -134,8 +170,8 @@ func exporterRun(cmd *cobra.Command, args []string) {
 	http.HandleFunc("/", homeConnections)
 	http.HandleFunc("/ws", exporterWSHandler)
 
-	log.Infof("Serving server on %s with port %d\n", fqdn.Get(), exporterOptions.Port)
-	err := http.ListenAndServe(":"+strconv.Itoa(exporterOptions.Port), nil)
+	log.Infof("Serving server on %s with port %d\n", fqdn.Get(), viper.GetInt("port"))
+	err := http.ListenAndServe(":"+viper.GetString("port"), nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
