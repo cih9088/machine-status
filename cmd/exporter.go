@@ -70,13 +70,13 @@ func homeConnections(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 	switch request.Method {
-	case "POST":
+	case "GET":
 		// Call ParseForm() to parse the raw query and update request.PostForm and request.Form.
 		if err := request.ParseForm(); err != nil {
 			fmt.Fprintf(response, "ParseForm() err: %v", err)
 			return
 		}
-		log.Infof("Post reqeust: request.PostFrom = %v\n", request.PostForm)
+		log.Infof("Get reqeust: \n")
 		response.Write(cache.Data)
 	default:
 		log.Warnf("%s is not suppored", request.Method)
