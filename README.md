@@ -14,29 +14,29 @@ A web interface for GPU machines that is largely inspired by [gpustat-web](https
 # on each machine you want to export status
 $ docker run -p 9200:9200 --detach --pid=host --hostname=$(hostname) \
     --name mstat-exporter --restart always --gpus all \
-    cih9088/machine-status:0.3.1 exporter
+    cih9088/machine-status:0.3.2 exporter
 
 # use another port rather than default one
 $ docker run -p 9999:9999 --detach --pid=host --hostname=$(hostname) \
     --name mstat-exporter --restart always --gpus all \
-    cih9088/machine-status:0.3.1 exporter --port 9999
+    cih9088/machine-status:0.3.2 exporter --port 9999
 
 # show user name and pid on each GPUs
 # note that, to query username from UID, we should pass mapping
 # between username and UID.
 $ docker run -p 9200:9200 --detach --pid=host --hostname=$(hostname) \
     --name mstat-exporter --restart always --gpus all \
-    cih9088/machine-status:0.3.1 exporter \
+    cih9088/machine-status:0.3.2 exporter \
     --show-user --show-pid --mapping="$(getent passwd | awk -F':' '{ if ($3 >= 1000) printf "%s:%s ", $1, $3; }')"
 
 # change timezone
 $ docker run -p 9200:9200 --detach --pid=host --hostname=$(hostname) \
     --name mstat-exporter --restart always --gpus all \
     --env TZ="Europe/London" \
-    cih9088/machine-status:0.3.1 exporter
+    cih9088/machine-status:0.3.2 exporter
 
 # help for exporter
-$ docker run --rm cih9088/machine-status:0.3.1 exporter -h
+$ docker run --rm cih9088/machine-status:0.3.2 exporter -h
 ```
 
 <!-- ##### Environment variables -->
@@ -53,7 +53,7 @@ Change user, pass, machine, and etc. as you wish.
 ```bash
 # simple authenticated web server
 $ docker run -p 80:80 --detach --name mstat-server --restart always \
-    cih9088/machine-status:0.3.1 server-simple \
+    cih9088/machine-status:0.3.2 server-simple \
         --fqdn $(hostname --fqdn) \
         --user user1,user2 \
         --pwd pass1,pass2 \
@@ -64,7 +64,7 @@ $ docker run -p 80:80 --detach --name mstat-server --restart always \
 # simple authenticated web server with pre-generated tls
 $ docker run -p 80:80 --detach --name mstat-server --restart always \
     --volume path/where/certs/are/in:/tmp/certs \
-    cih9088/machine-status:0.3.1 server-simple \
+    cih9088/machine-status:0.3.2 server-simple \
         --fqdn $(hostname --fqdn) \
         --wss \
         --https-key key_name_in_path/wehre/certs/are/in \
@@ -79,7 +79,7 @@ $ docker run -p 80:80 --detach --name mstat-server --restart always \
 # simple authenticated web server with letsencrypt tls
 $ docker run -p 80:80 --detach --name mstat-server --restart always \
     --volume path/where/certs/are/in:/tmp/certs \
-    cih9088/machine-status:0.3.1 server-simple \
+    cih9088/machine-status:0.3.2 server-simple \
         --fqdn $(hostname --fqdn) \
         --wss \
         --letsencrypt \
@@ -94,7 +94,7 @@ $ docker run -p 80:80 --detach --name mstat-server --restart always \
 $ docker run -p 80:80 --detach --name mstat-server --restart always \
     --volume path/where/certs/are/in:/tmp/certs \
     --volume path/to/keycloak.json:/app/web/keycloak/keycloak.json
-    cih9088/machine-status:0.3.1 server-simple \
+    cih9088/machine-status:0.3.2 server-simple \
         --fqdn $(hostname --fqdn) \
         --wss \
         --letsencrypt \
@@ -107,9 +107,9 @@ $ docker run -p 80:80 --detach --name mstat-server --restart always \
         --machine machine3.example.com:9200
 
 # help for simple server
-$ docker run --rm cih9088/machine-status:0.3.1 server-simple -h
+$ docker run --rm cih9088/machine-status:0.3.2 server-simple -h
 # help for keycloak server
-$ docker run --rm cih9088/machine-status:0.3.1 server-keycloak -h
+$ docker run --rm cih9088/machine-status:0.3.2 server-keycloak -h
 ```
 
 #### Docker compose example
