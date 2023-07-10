@@ -106,6 +106,22 @@ $ docker run -p 443:443 --detach --name mstat-server --restart always \
         --machine machine2.example.com:9200 \
         --machine machine3.example.com:9200
 
+# simple authenticated web server with self-signed tls
+$ mkdir certs && pushd certs
+$ openssl req -new -subj "/C=US/ST=Utah/CN=localhost" -newkey rsa:2048 -nodes -keyout localhost.key -out localhost.csr
+$ openssl x509 -req -days 365 -in localhost.csr -signkey localhost.key -out localhost.crt
+$ popd
+$ docker run -p 8080:8080 --detach --name mstat-server --restart always \
+    $(pwd)/certs:/tmp/certs \
+    cih9088/machine-status:0.3.2 server-simple \
+        --fqdn $(hostname --fqdn):8080 \
+        --wss \
+        --https-key localhost.key \
+        --https-crt localhost.crt \
+        --user user1,user2 \
+        --pwd pass1,pass2 \
+        --machine machine1.example.com:9200
+
 # simple authenticated web server with letsencrypt tls
 $ docker run -p 443:443 --detach --name mstat-server --restart always \
     --volume path/where/certs/are/in:/tmp/certs \

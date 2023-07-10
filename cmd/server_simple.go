@@ -257,7 +257,7 @@ func (o *SimpleOptions) Run(cmd *cobra.Command, args []string) {
 	if o.HttpsKey != "" && o.HttpsCrt != "" {
 		key := path.Join("/tmp/certs", o.HttpsKey)
 		crt := path.Join("/tmp/certs", o.HttpsCrt)
-		err := http.ListenAndServeTLS(addr, key, crt, nil)
+		err := http.ListenAndServeTLS(addr, crt, key, nil)
 		if err != nil {
 			log.Fatal("ListenAndServe: ", err)
 		}
