@@ -15,7 +15,6 @@ type ServerOptions struct {
 	HttpsCrt    string
 	LetsEntrypt bool
 	FQDN        string
-	Port        int
 	Rootpage    string
 	Machines    []string
 	Aliases     []string

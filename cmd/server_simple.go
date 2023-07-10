@@ -2,10 +2,10 @@ package cmd
 
 import (
 	"html/template"
+	"net"
 	"net/http"
 	"os"
 	"path"
-	"strconv"
 	"strings"
 
 	"golang.org/x/crypto/acme/autocert"
@@ -113,16 +113,12 @@ func (o *SimpleOptions) dashboardHandler(response http.ResponseWriter, request *
 		}
 		index := strings.Index(o.FQDN, "/")
 		if index == -1 {
-			if o.Port == 80 || o.Port == 443 {
-				target += o.FQDN + o.Rootpage + "/ws"
-			} else {
-				target += o.FQDN + ":" + strconv.Itoa(o.Port) + o.Rootpage + "/ws"
-			}
+			target += o.FQDN + o.Rootpage + "/ws"
 		} else {
 			log.Panic(o.FQDN)
 		}
 
-		log.Info(target)
+		log.Infof("ws target: %s", target)
 
 		machines := []IndexPageData{}
 
@@ -172,15 +168,13 @@ func init() {
 	simpleServerCmd.Flags().BoolVar(&serverOptions.LetsEntrypt, "letsencrypt", false,
 		"whether use letsencrypt for https")
 	simpleServerCmd.Flags().StringVar(&serverOptions.FQDN, "fqdn", fqdn.Get(),
-		"fully qualified domain name or ip address")
+		"fully qualified domain name or ip address including port. If port is not specified, it assumes '80'. This should be accessable from clinets.")
 	simpleServerCmd.Flags().StringVar(&serverOptions.Rootpage, "root", "/",
 		"root page for the http server")
-	simpleServerCmd.Flags().IntVar(&serverOptions.Port, "port", 80,
-		"port to serve")
 	simpleServerCmd.Flags().IntVar(&serverOptions.Interval, "interval", 1000,
 		"refresh interval in milliseconds")
 	simpleServerCmd.Flags().StringSliceVar(&serverOptions.Machines, "machine", []string{},
-		"comma seperated exporter machines with port (ex: 'host:9200') ")
+		"comma seperated exporter machines with port (ex: 'host:9200' or 'host:9200->alias' with alias) ")
 	simpleServerCmd.Flags().StringSliceVar(&serverOptions.Collapses, "collapse", []string{},
 		"comma seperated exporter machines with port (ex: 'host:9200') to collapse default")
 	simpleServerCmd.Flags().StringSliceVar(&serverOptions.Users, "user", []string{},
@@ -222,7 +216,7 @@ func (o *SimpleOptions) Run(cmd *cobra.Command, args []string) {
 		}
 		o.Machines[idx] = machine
 		o.Aliases = append(o.Aliases, alias)
-    log.Infof("Machine mapping: %s -> %s", machine, alias)
+		log.Infof("Machine mapping: %s -> %s", machine, alias)
 	}
 
 	if rootOptions.Debug {
@@ -252,9 +246,13 @@ func (o *SimpleOptions) Run(cmd *cobra.Command, args []string) {
 	http.Handle("/web/", http.StripPrefix("/web/", http.FileServer(http.Dir("./web"))))
 	http.Handle("/", router)
 
-	log.Infof("Serving server on %s with port %d\n", o.FQDN, o.Port)
+	log.Infof("Serving server on %s\n", o.FQDN)
 
-	addr := ":" + strconv.Itoa(o.Port)
+	host, port, _ := net.SplitHostPort(o.FQDN)
+	if port == "" {
+		port = "80"
+	}
+	addr := ":" + port
 
 	if o.HttpsKey != "" && o.HttpsCrt != "" {
 		key := path.Join("/tmp/certs", o.HttpsKey)
@@ -267,7 +265,7 @@ func (o *SimpleOptions) Run(cmd *cobra.Command, args []string) {
 		m := &autocert.Manager{
 			Prompt:     autocert.AcceptTOS,
 			Cache:      autocert.DirCache("/tmp/certs"),
-			HostPolicy: autocert.HostWhitelist(o.FQDN),
+			HostPolicy: autocert.HostWhitelist(host),
 		}
 
 		s := &http.Server{

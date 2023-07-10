@@ -72,6 +72,16 @@ $ docker run -p 80:80 --detach --name mstat-server --restart always \
         --machine machine2.example.com:9200 \
         --machine machine3.example.com:9200
 
+# simple authenticated web server with non trivial port
+$ docker run -p 8080:8080 --detach --name mstat-server --restart always \
+    cih9088/machine-status:0.3.2 server-simple \
+        --fqdn $(hostname --fqdn):8080 \
+        --user user1,user2 \
+        --pwd pass1,pass2 \
+        --machine machine1.example.com:9200 \
+        --machine machine2.example.com:9200 \
+        --machine machine3.example.com:9200
+
 # simple authenticated web server with alias
 $ docker run -p 80:80 --detach --name mstat-server --restart always \
     cih9088/machine-status:0.3.2 server-simple \
@@ -83,14 +93,13 @@ $ docker run -p 80:80 --detach --name mstat-server --restart always \
         --machine "machine3.example.com:9200->alias"
 
 # simple authenticated web server with pre-generated tls
-$ docker run -p 80:80 --detach --name mstat-server --restart always \
+$ docker run -p 443:443 --detach --name mstat-server --restart always \
     --volume path/where/certs/are/in:/tmp/certs \
     cih9088/machine-status:0.3.2 server-simple \
-        --fqdn $(hostname --fqdn) \
+        --fqdn $(hostname --fqdn):443 \
         --wss \
         --https-key key_name_in_path/wehre/certs/are/in \
         --https-crt certificate_name_in_path/where/certs/are/in \
-        --port 443 \
         --user user1,user2 \
         --pwd pass1,pass2 \
         --machine machine1.example.com:9200 \
@@ -98,13 +107,12 @@ $ docker run -p 80:80 --detach --name mstat-server --restart always \
         --machine machine3.example.com:9200
 
 # simple authenticated web server with letsencrypt tls
-$ docker run -p 80:80 --detach --name mstat-server --restart always \
+$ docker run -p 443:443 --detach --name mstat-server --restart always \
     --volume path/where/certs/are/in:/tmp/certs \
     cih9088/machine-status:0.3.2 server-simple \
-        --fqdn $(hostname --fqdn) \
+        --fqdn $(hostname --fqdn):443 \
         --wss \
         --letsencrypt \
-        --port 443 \
         --user user1,user2 \
         --pwd pass1,pass2 \
         --machine machine1.example.com:9200 \
@@ -112,14 +120,13 @@ $ docker run -p 80:80 --detach --name mstat-server --restart always \
         --machine machine3.example.com:9200
 
 # keycloak authenticated web server with letsencrypt tls
-$ docker run -p 80:80 --detach --name mstat-server --restart always \
+$ docker run -p 443:443 --detach --name mstat-server --restart always \
     --volume path/where/certs/are/in:/tmp/certs \
     --volume path/to/keycloak.json:/app/web/keycloak/keycloak.json
     cih9088/machine-status:0.3.2 server-simple \
-        --fqdn $(hostname --fqdn) \
+        --fqdn $(hostname --fqdn):443 \
         --wss \
         --letsencrypt \
-        --port 443 \
         --keycloak-server https://keycloak.server:8443 \
         --keycloak-client client_name \
         --keycloak-realm realm_name \

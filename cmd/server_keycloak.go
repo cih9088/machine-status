@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"html/template"
+	"net"
 	"net/http"
 	"os"
 	"path"
-	"strconv"
 	"strings"
 
 	"golang.org/x/crypto/acme/autocert"
@@ -196,11 +196,7 @@ func (o *KeycloakOptions) dashboardHandler(response http.ResponseWriter, request
 	}
 	index := strings.Index(o.FQDN, "/")
 	if index == -1 {
-		if o.Port == 80 || o.Port == 443 {
-			target += o.FQDN + o.Rootpage + "/ws"
-		} else {
-			target += o.FQDN + ":" + strconv.Itoa(o.Port) + o.Rootpage + "/ws"
-		}
+		target += o.FQDN + o.Rootpage + "/ws"
 	} else {
 		log.Panic(o.FQDN)
 	}
@@ -210,8 +206,8 @@ func (o *KeycloakOptions) dashboardHandler(response http.ResponseWriter, request
 	machines := []IndexPageData{}
 
 	for idx := range o.Machines {
-    machine := o.Machines[idx]
-    alias := o.Aliases[idx]
+		machine := o.Machines[idx]
+		alias := o.Aliases[idx]
 		isCollapse := "checked"
 		if stringInSlice(machine, o.Collapses) {
 			isCollapse = ""
@@ -252,16 +248,14 @@ func init() {
 		"name of crt to serve https in /tmp/certs")
 	keycloakServerCmd.Flags().BoolVar(&keycloakOptions.LetsEntrypt, "letsencrypt", false,
 		"whether use letsencrypt for https")
-	keycloakServerCmd.Flags().StringVar(&keycloakOptions.FQDN, "fqdn", fqdn.Get(),
-		"fully qualified domain name or ip address")
+	keycloakServerCmd.Flags().StringVar(&serverOptions.FQDN, "fqdn", fqdn.Get(),
+		"fully qualified domain name or ip address including port. If port is not specified, it assumes '80'. This should be accessable from clinets.")
 	keycloakServerCmd.Flags().StringVar(&keycloakOptions.Rootpage, "root", "/",
 		"root page for the http server")
-	keycloakServerCmd.Flags().IntVar(&keycloakOptions.Port, "port", 80,
-		"port to serve")
 	keycloakServerCmd.Flags().IntVar(&keycloakOptions.Interval, "interval", 1000,
 		"refresh interval in milliseconds")
 	keycloakServerCmd.Flags().StringSliceVar(&keycloakOptions.Machines, "machine", []string{},
-		"comma seperated exporter machines with port (ex: 'host:9200') ")
+		"comma seperated exporter machines with port (ex: 'host:9200' or 'host:9200->alias' with alias) ")
 	keycloakServerCmd.Flags().StringSliceVar(&keycloakOptions.Collapses, "collapse", []string{},
 		"comma seperated exporter machines with port (ex: 'host:9200') to collapse default")
 	keycloakServerCmd.Flags().StringVar(&keycloakOptions.KeycloakServer, "keycloak-server", "",
@@ -307,7 +301,7 @@ func (o *KeycloakOptions) Run(cmd *cobra.Command, args []string) {
 		}
 		o.Machines[idx] = machine
 		o.Aliases = append(o.Aliases, alias)
-    log.Infof("Machine mapping: %s -> %s", machine, alias)
+		log.Infof("Machine mapping: %s -> %s", machine, alias)
 	}
 
 	if rootOptions.Debug {
@@ -337,9 +331,13 @@ func (o *KeycloakOptions) Run(cmd *cobra.Command, args []string) {
 	http.Handle("/web/", http.StripPrefix("/web/", http.FileServer(http.Dir("./web"))))
 	http.Handle("/", router)
 
-	log.Infof("Serving server on %s with port %d\n", o.FQDN, o.Port)
+	log.Infof("Serving server on %s\n", o.FQDN)
 
-	addr := ":" + strconv.Itoa(o.Port)
+	host, port, _ := net.SplitHostPort(o.FQDN)
+	if port == "" {
+		port = "80"
+	}
+	addr := ":" + port
 
 	if o.HttpsKey != "" && o.HttpsCrt != "" {
 		key := path.Join("/tmp/certs", o.HttpsKey)
@@ -352,7 +350,7 @@ func (o *KeycloakOptions) Run(cmd *cobra.Command, args []string) {
 		m := &autocert.Manager{
 			Prompt:     autocert.AcceptTOS,
 			Cache:      autocert.DirCache("/tmp/certs"),
-			HostPolicy: autocert.HostWhitelist(o.FQDN),
+			HostPolicy: autocert.HostWhitelist(host),
 		}
 
 		s := &http.Server{
