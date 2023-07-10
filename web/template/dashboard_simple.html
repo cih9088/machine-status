@@ -40,7 +40,7 @@
       {{range .Machines}}
       <div class="wrap-collabsible">
         <input id="collapsible-{{.Machine}}" class="toggle" type="checkbox" {{.IsCollapse}}>
-        <label for="collapsible-{{.Machine}}" class="lbl-toggle">{{.Machine}}</label>
+        <label for="collapsible-{{.Machine}}" class="lbl-toggle">{{.Alias}}</label>
         <div class="collapsible-content">
           <div class="content-inner"><pre class='b9' id="{{.Machine}}"></pre></div></div></div>
             {{end}}

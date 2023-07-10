@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -19,12 +18,14 @@ type ServerOptions struct {
 	Port        int
 	Rootpage    string
 	Machines    []string
+	Aliases     []string
 	Interval    int
 	Collapses   []string
 }
 
 type IndexPageData struct {
 	Machine    string
+	Alias      string
 	IsCollapse string
 }
 
@@ -121,8 +122,6 @@ func (o *ServerOptions) webSocketHandler(w http.ResponseWriter, r *http.Request)
 			if isConnOpens[machine] {
 				msg = <-machineChans[machine]
 			}
-			index := strings.Index(machine, ":")
-			machine = machine[:index]
 			ws.WriteJSON(struct {
 				Machine string
 				Data    string

@@ -19,15 +19,26 @@ $ docker run -p 9200:9200 --detach --pid=host --hostname=$(hostname) \
 # use another port rather than default one
 $ docker run -p 9999:9999 --detach --pid=host --hostname=$(hostname) \
     --name mstat-exporter --restart always --gpus all \
-    cih9088/machine-status:0.3.2 exporter --port 9999
+    cih9088/machine-status:0.3.2 exporter \
+        --port 9999
 
 # show user name and pid on each GPUs
-# note that, to query username from UID, we should pass mapping
-# between username and UID.
+# note that, to query username from UID,
+# one should bind /etc/passwd, /etc/group, /etc/shadow to the container
+$ docker run -p 9200:9200 --detach --pid=host --hostname=$(hostname) \
+    --volume /etc/passwd:/etc/passwd:ro \
+    --volume /etc/group:/etc/group:ro \
+    --volume /etc/shadow:/etc/shadow:ro \
+    --name mstat-exporter --restart always --gpus all \
+    cih9088/machine-status:0.3.2 exporter \
+        --show-user --show-pid
+
+# or create explicit mapping between UID and username
 $ docker run -p 9200:9200 --detach --pid=host --hostname=$(hostname) \
     --name mstat-exporter --restart always --gpus all \
     cih9088/machine-status:0.3.2 exporter \
-    --show-user --show-pid --mapping="$(getent passwd | awk -F':' '{ if ($3 >= 1000) printf "%s:%s ", $1, $3; }')"
+        --show-user --show-pid \
+        --mapping="$(getent passwd | awk -F':' '{ if ($3 >= 1000) printf "%s:%s ", $1, $3; }')"
 
 # change timezone
 $ docker run -p 9200:9200 --detach --pid=host --hostname=$(hostname) \
@@ -60,6 +71,16 @@ $ docker run -p 80:80 --detach --name mstat-server --restart always \
         --machine machine1.example.com:9200 \
         --machine machine2.example.com:9200 \
         --machine machine3.example.com:9200
+
+# simple authenticated web server with alias
+$ docker run -p 80:80 --detach --name mstat-server --restart always \
+    cih9088/machine-status:0.3.2 server-simple \
+        --fqdn $(hostname --fqdn) \
+        --user user1,user2 \
+        --pwd pass1,pass2 \
+        --machine "machine1.example.com:9200->alias" \
+        --machine "machine2.example.com:9200->alias" \
+        --machine "machine3.example.com:9200->alias"
 
 # simple authenticated web server with pre-generated tls
 $ docker run -p 80:80 --detach --name mstat-server --restart always \

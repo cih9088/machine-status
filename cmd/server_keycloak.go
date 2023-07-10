@@ -209,8 +209,9 @@ func (o *KeycloakOptions) dashboardHandler(response http.ResponseWriter, request
 
 	machines := []IndexPageData{}
 
-	for _, machine := range o.Machines {
-		index := strings.Index(machine, ":")
+	for idx := range o.Machines {
+    machine := o.Machines[idx]
+    alias := o.Aliases[idx]
 		isCollapse := "checked"
 		if stringInSlice(machine, o.Collapses) {
 			isCollapse = ""
@@ -218,6 +219,7 @@ func (o *KeycloakOptions) dashboardHandler(response http.ResponseWriter, request
 
 		machines = append(machines, IndexPageData{
 			Machine:    machine[:index],
+			Alias:      alias,
 			IsCollapse: isCollapse,
 		})
 	}
@@ -290,6 +292,22 @@ func (o *KeycloakOptions) Run(cmd *cobra.Command, args []string) {
 	} else if o.HttpsKey == "" && o.HttpsCrt == "" {
 	} else {
 		log.Panic("https-key and https-crt should be given")
+	}
+
+	// parse machine
+	for idx, machine := range o.Machines {
+		parsed := strings.Split(machine, "->")
+		alias := ""
+		if len(parsed) == 1 {
+			machine = parsed[0]
+			alias = parsed[0]
+		} else {
+			machine = parsed[0]
+			alias = parsed[1]
+		}
+		o.Machines[idx] = machine
+		o.Aliases = append(o.Aliases, alias)
+    log.Infof("Machine mapping: %s -> %s", machine, alias)
 	}
 
 	if rootOptions.Debug {
