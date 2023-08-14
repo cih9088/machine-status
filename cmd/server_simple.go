@@ -27,8 +27,8 @@ var (
 
 	simpleServerCmd = &cobra.Command{
 		Use:    "server-simple",
-		Short:  "machine-status simple web service",
-		Long:   `machine-status simple web service`,
+		Short:  "machine-status simple authentication enabled web service",
+		Long:   `machine-status simple authentication enabled web service`,
 		Args:   cobra.NoArgs,
 		Run:    serverOptions.Run,
 		Hidden: false,
