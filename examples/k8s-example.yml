@@ -31,7 +31,7 @@ spec:
                 - 'true'
       containers:
       - name: mstat-exporter
-        image: cih9088/machine-status:0.3.1
+        image: cih9088/machine-status:0.3.2
         imagePullPolicy: Always
         args: ["exporter"]
         ports:
@@ -51,7 +51,7 @@ metadata:
 spec:
   containers:
   - name: mstat-server
-    image: cih9088/machine-status:0.3.1
+    image: cih9088/machine-status:0.3.2
     imagePullPolicy: Always
     args: ["server-simple",
         "--fqdn", "server.example.com",

@@ -2,8 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"net/http"
+	"net/url"
 	"path"
 	"runtime"
+	"strings"
 
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
@@ -22,9 +25,18 @@ var (
 	upgrader = websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
-		// CheckOrigin: func(r *http.Request) bool {
-		//     return true
-		// },
+		CheckOrigin: func(r *http.Request) bool {
+			origin, ok := r.Header["Origin"]
+			if !ok {
+				return true
+			}
+			u, _ := url.Parse(origin[0])
+			host := r.Host
+			if strings.HasPrefix(u.Host, host) {
+				return true
+			}
+			return false
+		},
 	}
 
 	rootCmd = &cobra.Command{
