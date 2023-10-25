@@ -111,7 +111,7 @@ func init() {
 	exporterCmd.Flags().BoolP("show-user", "u", false, "show user name")
 	exporterCmd.Flags().BoolP("show-pid", "p", false, "show PID")
 	exporterCmd.Flags().BoolP("show-power", "w", false, "show power usage")
-	exporterCmd.Flags().BoolP("show-cmd", "c", true, "show command of the process")
+	exporterCmd.Flags().BoolP("show-cmd", "c", false, "show command of the process")
 	exporterCmd.Flags().BoolP("show-fan", "f", false, "show fan speed")
 	viper.BindPFlags(exporterCmd.Flags())
 

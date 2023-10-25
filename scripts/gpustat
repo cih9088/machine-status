@@ -153,18 +153,12 @@ if [ -n "$*" ]; then
 fi
 
 case "$OSTYPE" in
-  solaris*) platform="SOLARIS" ;;
-  darwin*)  platform="OSX" ;;
-  linux*)   platform="LINUX" ;;
-  bsd*)     platform="BSD" ;;
-  msys*)    platform="WINDOWS" ;;
-  *)        platform="unknown: $OSTYPE" ;;
+  linux*)
+    ;;
+  *)
+    echo "'${OSTYPE}' is not supported OS type." >&2; exit 1
+    ;;
 esac
-
-if [[ $platform != LINUX ]]; then
-  echo "This script dose not support $platform." >&2
-  exit 1
-fi
 
 command -v nvidia-smi >/dev/null || ( echo "nvidia-smi command not found" >&2; exit 1 )
 command -v awk >/dev/null || ( echo "awk command not found" >&2; exit 1 )
@@ -182,10 +176,11 @@ declare -A gpus
 names=($(nvidia-smi --query-gpu=name --format=csv,noheader,nounits))
 nvml_version=$(nvidia-smi -i 0 --query-gpu=driver_version --format=csv,noheader)
 max_length=0
+n_pad_idx=${#names[@]}
+n_pad_idx=${#n_pad_idx}
+names=($(sort <<< "${names[*]}" | uniq))
 for name in ${names[@]}; do
-  if [ ${#name} -gt ${max_length} ]; then
-    max_length=${#name}
-  fi
+  [ ${#name} -gt ${max_length} ] && max_length=${#name}
 done
 max_length=$(( ${max_length} + 2 ))
 
@@ -218,13 +213,6 @@ while true; do
       pid=$(cut -d ',' -f 2 <(echo ${line}) | tr -d '[:space:]')
       memory=$(cut -d ',' -f 3 <(echo ${line}) | tr -d '[:space:]')
       user=$(stat -c "%U" /proc/${pid} 2>/dev/null || echo "Anonymous")
-      if [ $user == "UNKNOWN" ] && [ -f $MAPPING_FILE ]; then
-        uid=$(stat -c "%u" /proc/${pid})
-        query=$(grep $uid $MAPPING_FILE | awk -F':' '{print $1}')
-        if [ ${#query} -gt 1 ]; then
-          user=$query
-        fi
-      fi
       comm=$(strings /proc/${pid}/cmdline || echo "Unkonwn")
       [ ! -z "$comm" ] && comm=$(echo "$comm" | head -n 1) || comm="Unkonwn"
       if [ "$user" == "Anonymous" ] || [ "$comm" == "Unkonwn" ]; then
@@ -241,7 +229,7 @@ while true; do
 
   out=""
   if [ ${SHOW_HEADER} -eq 1 ]; then
-    out+="${Bold}$(hostname)${Reset} ${Dark}${nvml_version}${Reset}   $(date)\n"
+    out+="${Bold}$(hostname)${Reset}  ${Dark}${nvml_version}${Reset}   $(date)\n"
   fi
 
   for uuid in "${gpus_order[@]}"; do
@@ -309,7 +297,7 @@ while true; do
   {
     # index
     cyan()
-    printf "[%s] ", $1
+    printf "[%'${n_pad_idx}'d] ", $1
     reset()
 
     # gpu name
