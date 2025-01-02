@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -45,7 +46,7 @@ var (
 
 	isConnOpens   = make(map[string]bool)
 	machineConns  = make(map[string]*websocket.Conn)
-	machineChans  = make(map[string](chan string))
+	machineCaches = make(map[string]string)
 	trigerConnect = make(chan int)
 )
 
@@ -79,29 +80,36 @@ func (o *ServerOptions) connectExporters(machineConns map[string]*websocket.Conn
 	}
 }
 
-func (o *ServerOptions) webSocketHandler(w http.ResponseWriter, r *http.Request) {
-	// Upgrade initial GET request to a websocket
-	ws, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Fatal(err)
+func (o *ServerOptions) fetchExporters(machineConns map[string]*websocket.Conn, machineCaches map[string]string, isConnOpens map[string]bool) {
+
+  machineChans := make(map[string](chan string))
+	for machine, _ := range machineConns {
+		machineChans[machine] = make(chan string)
 	}
-	// Make sure we close the connection when the function returns
-	defer ws.Close()
 
-	for {
-
-		mt, message, err := ws.ReadMessage()
-		if err != nil {
-			log.Debug("Disonnected client from %s with %s", r.RemoteAddr, err)
-			break
-		} else {
-			log.Debug("Received message from client %s", r.RemoteAddr)
+	go func() {
+		for {
+			for machine, _ := range isConnOpens {
+				select {
+				case x, ok := <-machineChans[machine]:
+					if ok {
+						machineCaches[machine] = x
+					} else {
+						panic("Channel closed!")
+					}
+				}
+			}
 		}
+	}()
 
+	var wg sync.WaitGroup
+	for {
 		for machine, isConnOpen := range isConnOpens {
 			if isConnOpen {
+				wg.Add(1)
 				go func(conn *websocket.Conn, cha chan string, isConnOpens map[string]bool, machine string) {
-					err = conn.WriteMessage(mt, message)
+					defer wg.Done()
+					err := conn.WriteMessage(1, []byte("fetch"))
 					if err != nil {
 						isConnOpens[machine] = false
 						log.Warnf("Write to exporter machine %s failed: %s", machine, err)
@@ -115,11 +123,26 @@ func (o *ServerOptions) webSocketHandler(w http.ResponseWriter, r *http.Request)
 				}(machineConns[machine], machineChans[machine], isConnOpens, machine)
 			}
 		}
+		wg.Wait()
 
+		time.Sleep(time.Duration(o.Interval) * time.Millisecond)
+	}
+}
+
+func (o *ServerOptions) webSocketHandler(w http.ResponseWriter, r *http.Request) {
+	// Upgrade initial GET request to a websocket
+	ws, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Make sure we close the connection when the function returns
+	defer ws.Close()
+
+	for {
 		for _, machine := range o.Machines {
 			msg := "<p class='ef9'>Server is offline</p>"
 			if isConnOpens[machine] {
-				msg = <-machineChans[machine]
+				msg = machineCaches[machine]
 			}
 			ws.WriteJSON(struct {
 				Machine string
@@ -138,5 +161,7 @@ func (o *ServerOptions) webSocketHandler(w http.ResponseWriter, r *http.Request)
 				log.Debug("Already tring to connect")
 			}
 		}
+
+		time.Sleep(time.Duration(o.Interval) * time.Millisecond)
 	}
 }

@@ -13,7 +13,6 @@
           conn = new WebSocket("{{.Ws}}");
           conn.onopen = function (evt) {
             console.log('websockt connection establised', conn);
-            conn.send('fetch');
           };
           conn.onerror = function (error) {
             console.log("onerror", error);
@@ -28,7 +27,6 @@
             var item = document.getElementById(messages.Machine)
             item.innerHTML = messages.Data;
           };
-          window.timer = setInterval( function() { conn.send('fetch'); }, {{.Interval}} );
         } else {
           var item = document.createElement("div");
           item.innerHTML = "<b>Your browser does not support WebSockets.</b>";

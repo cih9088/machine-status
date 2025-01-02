@@ -231,11 +231,12 @@ func (o *SimpleOptions) Run(cmd *cobra.Command, args []string) {
 	for _, machine := range o.Machines {
 		isConnOpens[machine] = false
 		machineConns[machine] = &websocket.Conn{}
-		machineChans[machine] = make(chan string)
+		machineCaches[machine] = ""
 	}
 
 	go o.connectExporters(machineConns, isConnOpens, trigerConnect)
 	trigerConnect <- 1
+	go o.fetchExporters(machineConns, machineCaches, isConnOpens)
 
 	router.HandleFunc("/", o.indexPageHandler)
 	router.HandleFunc("/ws", o.webSocketHandler)
