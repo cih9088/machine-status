@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"net/http"
 	"sync"
 	"time"
@@ -29,6 +30,64 @@ type IndexPageData struct {
 	IsCollapse string
 }
 
+type ExporterInfo struct {
+	url      string
+	isOnline bool
+	ws       *websocket.Conn
+	status   string
+	mu       *sync.RWMutex
+}
+
+func NewExporterInfo(url string) *ExporterInfo {
+	return &ExporterInfo{url: url, ws: nil, mu: new(sync.RWMutex)}
+}
+
+func (i *ExporterInfo) connect() {
+	if i.isOnline {
+		return
+	}
+
+	ws, _, err := dial.Dial("ws://"+i.url+"/ws", http.Header{})
+	if err != nil {
+		log.Errorf("Dial error for machine %s: %s:", i.url, err)
+	}
+
+	i.mu.Lock()
+	defer i.mu.Unlock()
+
+	i.ws = ws
+	i.isOnline = true
+	log.Infof("%s is connected", i.url)
+}
+
+func (i *ExporterInfo) fetch() error {
+	if !i.isOnline {
+		return fmt.Errorf("%s is not online", i.url)
+	}
+
+	i.mu.Lock()
+	defer i.mu.Unlock()
+
+	err := i.ws.WriteMessage(1, []byte("fetch"))
+	if err != nil {
+		i.isOnline = false
+		_ = i.ws.Close()
+		log.Warnf("Write to exporter machine %s failed: %s", i.url, err)
+		return err
+	}
+	_, exporter_m, err := i.ws.ReadMessage()
+	if err != nil {
+		i.isOnline = false
+		_ = i.ws.Close()
+		log.Warnf("Read from exporter machine %s failed: %s", i.url, err)
+		return err
+	}
+
+	i.status = string(exporter_m)
+
+	return nil
+}
+
 var (
 	cookieHandler = securecookie.New(
 		securecookie.GenerateRandomKey(64),
@@ -44,10 +103,7 @@ var (
 
 	router = mux.NewRouter()
 
-	isConnOpens   = make(map[string]bool)
-	machineConns  = make(map[string]*websocket.Conn)
-	machineCaches = make(map[string]string)
-	trigerConnect = make(chan int)
+	exporterInfos = []*ExporterInfo{}
 )
 
 func clearSession(response http.ResponseWriter) {
@@ -60,71 +116,46 @@ func clearSession(response http.ResponseWriter) {
 	http.SetCookie(response, cookie)
 }
 
-func (o *ServerOptions) connectExporters(machineConns map[string]*websocket.Conn, isConnOpens map[string]bool, trigerConnect chan int) {
-	for {
-		select {
-		case <-trigerConnect:
-			for _, machine := range o.Machines {
-				if !isConnOpens[machine] {
-					machineWs, _, err := dial.Dial("ws://"+machine+"/ws", http.Header{})
-					if err != nil {
-						log.Errorf("Dial error for machine %s: %s:", machine, err)
-						continue
-					}
-					machineConns[machine] = machineWs
-					isConnOpens[machine] = true
-					log.Infof("%s is connected", machine)
-				}
-			}
-		}
+func (o *ServerOptions) init() {
+	for _, machine := range o.Machines {
+		exporterInfos = append(exporterInfos, NewExporterInfo(machine))
 	}
 }
 
-func (o *ServerOptions) fetchExporters(machineConns map[string]*websocket.Conn, machineCaches map[string]string, isConnOpens map[string]bool) {
-
-  machineChans := make(map[string](chan string))
-	for machine, _ := range machineConns {
-		machineChans[machine] = make(chan string)
+func (o *ServerOptions) connectAll() {
+	wg := new(sync.WaitGroup)
+	for _, exporterInfo := range exporterInfos {
+		wg.Add(1)
+		go func(e *ExporterInfo) {
+			defer wg.Done()
+			e.connect()
+		}(exporterInfo)
 	}
+	wg.Wait()
+}
 
-	go func() {
-		for {
-			for machine, _ := range isConnOpens {
-				select {
-				case x, ok := <-machineChans[machine]:
-					if ok {
-						machineCaches[machine] = x
-					} else {
-						panic("Channel closed!")
-					}
-				}
-			}
-		}
-	}()
+func (o *ServerOptions) fetchAll() {
+	wg := new(sync.WaitGroup)
+	for _, exporterInfo := range exporterInfos {
+		wg.Add(1)
+		go func(e *ExporterInfo) {
+			defer wg.Done()
+			e.fetch()
+		}(exporterInfo)
+	}
+	wg.Wait()
+}
 
-	var wg sync.WaitGroup
+func (o *ServerOptions) connectLoop() {
 	for {
-		for machine, isConnOpen := range isConnOpens {
-			if isConnOpen {
-				wg.Add(1)
-				go func(conn *websocket.Conn, cha chan string, isConnOpens map[string]bool, machine string) {
-					defer wg.Done()
-					err := conn.WriteMessage(1, []byte("fetch"))
-					if err != nil {
-						isConnOpens[machine] = false
-						log.Warnf("Write to exporter machine %s failed: %s", machine, err)
-					}
-					_, exporter_m, err := conn.ReadMessage()
-					if err != nil {
-						isConnOpens[machine] = false
-						log.Warnf("Read from exporter machine %s failed: %s", machine, err)
-					}
-					cha <- string(exporter_m)
-				}(machineConns[machine], machineChans[machine], isConnOpens, machine)
-			}
-		}
-		wg.Wait()
+		o.connectAll()
+		time.Sleep(time.Duration(o.Interval) * time.Millisecond)
+	}
+}
 
+func (o *ServerOptions) fetchLoop() {
+	for {
+		o.fetchAll()
 		time.Sleep(time.Duration(o.Interval) * time.Millisecond)
 	}
 }
@@ -139,27 +170,24 @@ func (o *ServerOptions) webSocketHandler(w http.ResponseWriter, r *http.Request)
 	defer ws.Close()
 
 	for {
-		for _, machine := range o.Machines {
-			msg := "<p class='ef9'>Server is offline</p>"
-			if isConnOpens[machine] {
-				msg = machineCaches[machine]
+		for _, exporterInfo := range exporterInfos {
+			exporterInfo.mu.RLock()
+
+			status := "<p class='ef9'>Server is offline</p>"
+			url := exporterInfo.url
+			if exporterInfo.isOnline {
+				status = exporterInfo.status
 			}
+
 			ws.WriteJSON(struct {
 				Machine string
 				Data    string
 			}{
-				Machine: machine,
-				Data:    msg,
+				Machine: url,
+				Data:    status,
 			})
-		}
 
-		if !boolAll(isConnOpens) {
-			select {
-			case trigerConnect <- 1:
-				log.Debug("Try to connect again")
-			default:
-				log.Debug("Already tring to connect")
-			}
+			exporterInfo.mu.RUnlock()
 		}
 
 		time.Sleep(time.Duration(o.Interval) * time.Millisecond)

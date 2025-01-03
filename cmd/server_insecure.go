@@ -11,7 +11,6 @@ import (
 	"golang.org/x/crypto/acme/autocert"
 
 	fqdn "github.com/Showmax/go-fqdn"
-	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -34,54 +33,54 @@ var (
 )
 
 func (o *InsecureOptions) dashboardHandler(response http.ResponseWriter, request *http.Request) {
-  log.Infof("Connected client from %s", request.RemoteAddr)
+	log.Infof("Connected client from %s", request.RemoteAddr)
 
-  target := ""
-  if o.Wss {
-    target += "wss://"
-  } else {
-    target += "ws://"
-  }
-  index := strings.Index(o.FQDN, "/")
-  if index == -1 {
-    target += o.FQDN + o.Rootpage + "/ws"
-  } else {
-    log.Panic(o.FQDN)
-  }
+	target := ""
+	if o.Wss {
+		target += "wss://"
+	} else {
+		target += "ws://"
+	}
+	index := strings.Index(o.FQDN, "/")
+	if index == -1 {
+		target += o.FQDN + o.Rootpage + "/ws"
+	} else {
+		log.Panic(o.FQDN)
+	}
 
-  log.Infof("ws target: %s", target)
+	log.Infof("ws target: %s", target)
 
-  machines := []IndexPageData{}
+	machines := []IndexPageData{}
 
-  for idx := range o.Machines {
-    machine := o.Machines[idx]
-    alias := o.Aliases[idx]
-    isCollapse := "checked"
-    if stringInSlice(machine, o.Collapses) {
-      isCollapse = ""
-    }
+	for idx := range o.Machines {
+		machine := o.Machines[idx]
+		alias := o.Aliases[idx]
+		isCollapse := "checked"
+		if stringInSlice(machine, o.Collapses) {
+			isCollapse = ""
+		}
 
-    machines = append(machines, IndexPageData{
-      Machine:    machine,
-      Alias:      alias,
-      IsCollapse: isCollapse,
-    })
-  }
+		machines = append(machines, IndexPageData{
+			Machine:    machine,
+			Alias:      alias,
+			IsCollapse: isCollapse,
+		})
+	}
 
-  page, err := template.ParseFiles("web/template/dashboard_simple.html")
-  check(err)
+	page, err := template.ParseFiles("web/template/dashboard_simple.html")
+	check(err)
 
-  page.Execute(response, struct {
-    Ws       string
-    Web      string
-    Interval int
-    Machines []IndexPageData
-  }{
-    Ws:       target,
-    Web:      o.Rootpage + "/web",
-    Interval: o.Interval,
-    Machines: machines,
-  })
+	page.Execute(response, struct {
+		Ws       string
+		Web      string
+		Interval int
+		Machines []IndexPageData
+	}{
+		Ws:       target,
+		Web:      o.Rootpage + "/web",
+		Interval: o.Interval,
+		Machines: machines,
+	})
 }
 
 func init() {
@@ -151,15 +150,10 @@ func (o *InsecureOptions) Run(cmd *cobra.Command, args []string) {
 		o.Rootpage = "/" + o.Rootpage
 	}
 
-	for _, machine := range o.Machines {
-		isConnOpens[machine] = false
-		machineConns[machine] = &websocket.Conn{}
-		machineCaches[machine] = ""
-	}
-
-	go o.connectExporters(machineConns, isConnOpens, trigerConnect)
-	trigerConnect <- 1
-	go o.fetchExporters(machineConns, machineCaches, isConnOpens)
+	o.init()
+	o.connectAll()
+	go o.connectLoop()
+	go o.fetchLoop()
 
 	router.HandleFunc("/", o.dashboardHandler)
 	router.HandleFunc("/ws", o.webSocketHandler)

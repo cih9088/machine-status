@@ -11,7 +11,6 @@ import (
 	"golang.org/x/crypto/acme/autocert"
 
 	fqdn "github.com/Showmax/go-fqdn"
-	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -228,15 +227,10 @@ func (o *SimpleOptions) Run(cmd *cobra.Command, args []string) {
 		o.Rootpage = "/" + o.Rootpage
 	}
 
-	for _, machine := range o.Machines {
-		isConnOpens[machine] = false
-		machineConns[machine] = &websocket.Conn{}
-		machineCaches[machine] = ""
-	}
-
-	go o.connectExporters(machineConns, isConnOpens, trigerConnect)
-	trigerConnect <- 1
-	go o.fetchExporters(machineConns, machineCaches, isConnOpens)
+	o.init()
+	o.connectAll()
+	go o.connectLoop()
+	go o.fetchLoop()
 
 	router.HandleFunc("/", o.indexPageHandler)
 	router.HandleFunc("/ws", o.webSocketHandler)
