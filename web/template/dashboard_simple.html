@@ -30,9 +30,23 @@
           item.innerHTML = "<b>Your browser does not support WebSockets.</b>";
         }
       };
+
+      function Toggle() {
+        var elem = document.querySelector('button[id=collapse_toggle]')
+        if (elem.innerHTML == "Collapse All"){
+          document.querySelectorAll('input[class=toggle]').forEach((x) => x.checked = false)
+          elem.innerHTML = "Expand All"
+        }else if (elem.innerHTML == "Expand All"){
+          document.querySelectorAll('input[class=toggle]').forEach((x) => x.checked = true)
+          elem.innerHTML = "Collapse All"
+        }
+      }
     </script>
   </head>
   <body class="f9 eb15">
+    <div style="display:flex; justify-content:flex-end; width:100%; padding:0;">
+    <button id="collapse_toggle" class="collapse_toggle" onclick="Toggle()">Collapse All</button>
+    </div>
     <div class="notice f1 b9" id="notice"></div>
     <div id="main">
       {{range .Machines}}

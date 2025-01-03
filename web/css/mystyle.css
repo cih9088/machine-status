@@ -375,3 +375,36 @@ pre {
    where we close span elements on the same line.
 span { display: inline-block; }
 */
+
+
+.collapse_toggle {
+  background-color: #111827;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  box-sizing: border-box;
+  color: #FFFFFF;
+  cursor: pointer;
+  flex: 0 0 auto;
+  font-weight: 600;
+  padding: .75rem 1.5rem;
+  text-align: center;
+  text-decoration: none #6B7280 solid;
+  text-decoration-thickness: auto;
+  transition-duration: .2s;
+  transition-property: background-color,border-color,color,fill,stroke;
+  transition-timing-function: cubic-bezier(.4, 0, 0.2, 1);
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  width: auto;
+}
+
+.collapse_toggle:hover {
+  background-color: #374151;
+}
+
+.collapse_toggle:focus {
+  box-shadow: none;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
