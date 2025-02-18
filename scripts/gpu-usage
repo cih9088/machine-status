@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+NVIDIA_SMI_PREFIX=${NVIDIA_SMI_PREFIX:-}
+
 case "$OSTYPE" in
     solaris*) platform="SOLARIS" ;;
     darwin*)  platform="OSX" ;;
@@ -14,4 +16,4 @@ if [[ $platform != LINUX ]]; then
     exit 1
 fi
 
-nvidia-smi --query-gpu=utilization.gpu,utilization.memory --format=csv,noheader,nounits | awk '{ total += $1; count++} END { print total/count}'
+${NVIDIA_SMI_PREFIX}=nvidia-smi --query-gpu=utilization.gpu,utilization.memory --format=csv,noheader,nounits | awk '{ total += $1; count++} END { print total/count}'

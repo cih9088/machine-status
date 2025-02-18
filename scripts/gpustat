@@ -35,6 +35,8 @@ IBlue='[0;94m'        # Blue
 IPurple='[0;95m'      # Purple
 ICyan='[0;96m'        # Cyan
 
+NVIDIA_SMI_PREFIX=${NVIDIA_SMI_PREFIX:-}
+
 vercomp () {
   if [[ $1 == $2 ]]; then
     echo 0
@@ -160,7 +162,7 @@ case "$OSTYPE" in
     ;;
 esac
 
-command -v nvidia-smi >/dev/null || ( echo "nvidia-smi command not found" >&2; exit 1 )
+command -v ${NVIDIA_SMI_PREFIX}nvidia-smi >/dev/null || ( echo "nvidia-smi command not found" >&2; exit 1 )
 command -v awk >/dev/null || ( echo "awk command not found" >&2; exit 1 )
 command -v paste >/dev/null || ( echo "paste command not found" >&2; exit 1 )
 command -v hostname >/dev/null || ( echo "paste command not found" >&2; exit 1 )
@@ -173,8 +175,8 @@ result=$(vercomp "${bash_version}" "4" )
 
 declare -A gpus
 
-names=($(nvidia-smi --query-gpu=name --format=csv,noheader,nounits))
-nvml_version=$(nvidia-smi -i 0 --query-gpu=driver_version --format=csv,noheader)
+names=($(${NVIDIA_SMI_PREFIX}nvidia-smi --query-gpu=name --format=csv,noheader,nounits))
+nvml_version=$(${NVIDIA_SMI_PREFIX}nvidia-smi -i 0 --query-gpu=driver_version --format=csv,noheader)
 max_length=0
 n_pad_idx=${#names[@]}
 n_pad_idx=${#n_pad_idx}
@@ -188,14 +190,14 @@ while true; do
 
   gpus_order=()
 
-  # coproc basicfd { nvidia-smi --query-gpu=gpu_uuid,name,temperature.gpu,utilization.gpu,power.draw,power.limit,memory.used,memory.total --format=csv,noheader,nounits; }
+  # coproc basicfd { ${NVIDIA_SMI_PREFIX}nvidia-smi --query-gpu=gpu_uuid,name,temperature.gpu,utilization.gpu,power.draw,power.limit,memory.used,memory.total --format=csv,noheader,nounits; }
   # exec 3>&${basicfd[0]}
-  # coproc perfd { nvidia-smi --query-compute-apps=gpu_uuid,pid,used_memory --format=csv,noheader,nounits; }
+  # coproc perfd { ${NVIDIA_SMI_PREFIX}nvidia-smi --query-compute-apps=gpu_uuid,pid,used_memory --format=csv,noheader,nounits; }
   # exec 4>&${perfd[0]}
   # basic_info=$(cat <&3)
   # per_info=$(cat <&4)
-  basic_info=$(nvidia-smi --query-gpu=gpu_uuid,name,temperature.gpu,utilization.gpu,fan.speed,power.draw,power.limit,memory.used,memory.total, --format=csv,noheader,nounits)
-  per_info=$(nvidia-smi --query-compute-apps=gpu_uuid,pid,used_memory --format=csv,noheader,nounits)
+  basic_info=$(${NVIDIA_SMI_PREFIX}nvidia-smi --query-gpu=gpu_uuid,name,temperature.gpu,utilization.gpu,fan.speed,power.draw,power.limit,memory.used,memory.total, --format=csv,noheader,nounits)
+  per_info=$(${NVIDIA_SMI_PREFIX}nvidia-smi --query-compute-apps=gpu_uuid,pid,used_memory --format=csv,noheader,nounits)
 
   ctr=0
   while IFS= read -r line; do

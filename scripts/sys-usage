@@ -6,6 +6,8 @@ DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd)"
 Color_Off='[0m'       # Text Reset
 Bold='[1m'       # Text Reset
 
+NVIDIA_SMI_PREFIX=${NVIDIA_SMI_PREFIX:-}
+
 ##################################################
 
 case "$OSTYPE" in
@@ -28,7 +30,8 @@ else
   args="$@"
 fi
 
-if command -v nvidia-smi >/dev/null; then
+
+if command -v "${NVIDIA_SMI_PREFIX}nvidia-smi" >/dev/null; then
   coproc gpudetailfd { ${DIR}/gpustat --no-header $@ | sed 's/^/        /'; }
   exec 3>&${gpudetailfd[0]}
 fi
@@ -39,7 +42,7 @@ echo "${BIWhite}${hostname}${Color_Off} ${now}"
 echo -en "   CPU: " && ${DIR}/cpu-usage | ${DIR}/ascii-bar 40
 echo
 echo -en "   MEM: " && ${DIR}/mem-usage | ${DIR}/ascii-bar 40
-if command -v nvidia-smi >/dev/null; then
+if command -v "${NVIDIA_SMI_PREFIX}nvidia-smi" >/dev/null; then
   echo
   echo -en "   GPU: " && ${DIR}/gpu-usage | ${DIR}/ascii-bar 40
   echo
