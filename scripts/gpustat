@@ -5,6 +5,15 @@ set -euo pipefail
 trap "echo 'error: Script failed: see failed command above'" ERR
 IFS=$'\n\t'
 MAPPING_FILE="${DIR}/../mapping.txt"
+declare -A MAPPING
+
+if [ -f $MAPPING_FILE ]; then
+  while IFS= read -r line; do
+    name=$(echo $line | cut -d':' -f1)
+    uid=$(echo $line | cut -d':' -f2)
+    MAPPING[$uid]=$name
+  done <$MAPPING_FILE
+fi
 
 # Reset
 Reset='[0m'       # Text Reset
@@ -217,9 +226,14 @@ while true; do
       if [ ! -d "/proc/${pid}" ]; then
         continue
       fi
-      user=$(stat -c "%U" /proc/${pid} 2>/dev/null || echo "Anonymous")
-      comm=$(strings /proc/${pid}/cmdline || echo "Unkonwn")
-      [ ! -z "$comm" ] && comm=$(echo "$comm" | head -n 1) || comm="Unkonwn"
+
+      uid=$(stat -c "%u" /proc/${pid})
+      user=$(id -un "$uid" 2>/dev/null || echo "UNKNOWN")
+      if [ "$user" == "UNKNOWN" ] && [ "${MAPPING[$uid]+exist}" ]; then
+        user=${MAPPING[$uid]}
+      fi
+      comm=$(strings /proc/${pid}/cmdline || echo "UNKNOWN")
+      [ ! -z "$comm" ] && comm=$(echo "$comm" | head -n 1) || comm="UNKNOWN"
       gpus[${uuid}]="${gpus[${uuid}]}, ${user}, ${comm}, ${pid}, ${memory}"
     done <<< "${per_info}"
   fi
