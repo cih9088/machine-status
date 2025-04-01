@@ -49,15 +49,17 @@ func (i *ExporterInfo) connect() {
 
 	ws, _, err := dial.Dial("ws://"+i.url+"/ws", http.Header{})
 	if err != nil {
+	  i.ws = nil
+		i.isOnline = false
 		log.Errorf("Dial error for machine %s: %s:", i.url, err)
+	} else {
+		i.mu.Lock()
+		defer i.mu.Unlock()
+
+		i.ws = ws
+		i.isOnline = true
+		log.Infof("%s is connected", i.url)
 	}
-
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
-	i.ws = ws
-	i.isOnline = true
-	log.Infof("%s is connected", i.url)
 }
 
 func (i *ExporterInfo) fetch() error {
