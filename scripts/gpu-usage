@@ -16,4 +16,4 @@ if [[ $platform != LINUX ]]; then
     exit 1
 fi
 
-${NVIDIA_SMI_PREFIX}=nvidia-smi --query-gpu=utilization.gpu,utilization.memory --format=csv,noheader,nounits | awk '{ total += $1; count++} END { print total/count}'
+${NVIDIA_SMI_PREFIX}nvidia-smi --query-gpu=utilization.gpu,utilization.memory --format=csv,noheader,nounits | awk '{ total += $1; count++} END { print total/count}'
