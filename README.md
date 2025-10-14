@@ -38,7 +38,7 @@ $ docker run -p 9200:9200 --detach --pid=host --hostname=$(hostname) \
     --name mstat-exporter --restart always --gpus all \
     cih9088/machine-status:0.3.6 exporter \
         --show-user --show-pid \
-        --mapping="$(getent passwd | awk -F':' '{ if ($3 >= 1000) printf "%s:%s ", $1, $3; }')"
+        --mapping="$(getent passwd | awk -F':' '{ if ($3 >= 1000) printf "%s:%s ", $3, $1; }')"
 
 # change timezone
 $ docker run -p 9200:9200 --detach --pid=host --hostname=$(hostname) \

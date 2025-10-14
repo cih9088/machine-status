@@ -9,11 +9,13 @@ declare -A MAPPING
 
 if [ -f $MAPPING_FILE ]; then
   while IFS= read -r line; do
-    name=$(echo $line | cut -d':' -f1)
-    uid=$(echo $line | cut -d':' -f2)
+    uid=$(echo $line | cut -d':' -f1)
+    name=$(echo $line | cut -d':' -f2)
     MAPPING[$uid]=$name
   done <$MAPPING_FILE
 fi
+
+NVIDIA_SMI_PREFIX=${NVIDIA_SMI_PREFIX:-}
 
 # Reset
 Reset='[0m'       # Text Reset
@@ -43,8 +45,6 @@ IYellow='[0;93m'      # Yellow
 IBlue='[0;94m'        # Blue
 IPurple='[0;95m'      # Purple
 ICyan='[0;96m'        # Cyan
-
-NVIDIA_SMI_PREFIX=${NVIDIA_SMI_PREFIX:-}
 
 vercomp () {
   if [[ $1 == $2 ]]; then
@@ -105,6 +105,9 @@ ${BRed}OPTIONS${Reset}
     ${BRed}-c, --show-cmd${Reset}
         Display command of the process.
 
+    ${BRed}-f, --show-full-cmd${Reset}
+        Display full command of the process.
+
     ${BRed}-f, --show-fan${Reset}
         Display GPU fan speed.
 
@@ -125,6 +128,7 @@ SHOW_HEADER=1
 SHOW_PID=0
 SHOW_POWER=0
 SHOW_CMD=0
+SHOW_FULLCMD=0
 SHOW_FAN=0
 SHOW_USER=2
 INTERVAL=0
@@ -137,6 +141,7 @@ for pass in 1 2; do
         -p|--show-pid)      SHOW_PID=1; [ ${SHOW_USER} == 1 ] || SHOW_USER=0;;
         -w|--show-power)    SHOW_POWER=1; ;;
         -c|--show-cmd)      SHOW_CMD=1; [ ${SHOW_USER} == 1 ] || SHOW_USER=0;;
+        -c|--show-full-cmd) SHOW_FULLCMD=1; SHOW_CMD=1; [ ${SHOW_USER} == 1 ] || SHOW_USER=0;;
         -u|--show-user)     SHOW_USER=1;;
         -f|--show-fan)      SHOW_FAN=1;;
         -i|--interval)      INTERVAL=${2:-1}; [ ! -z ${2:-} ] && shift;;
@@ -211,7 +216,7 @@ while true; do
   ctr=0
   while IFS= read -r line; do
     line_=$(awk -F, 'BEGIN {OFS = ","} {print substr($0, index($0,$2))}' <(echo ${line}))
-    line_="${ctr},${line_}"
+    line_=$(echo "${ctr}, ${line_}" | sed -e "s/, /:,:/g")
     gpus["$(awk -F, '{print $1}' <(echo ${line}))"]="${line_}"
     gpus_order+=("$(awk -F, '{print $1}' <(echo ${line}))")
     ctr=$(( ${ctr} + 1 ))
@@ -228,13 +233,14 @@ while true; do
       fi
 
       uid=$(stat -c "%u" /proc/${pid})
-      user=$(id -un "$uid" 2>/dev/null || echo "UNKNOWN")
-      if [ "$user" == "UNKNOWN" ] && [ "${MAPPING[$uid]+exist}" ]; then
+      user=$(id -un "$uid" 2>/dev/null || echo "Anonymous")
+      if [ "$user" == "Anonymous" ] && [ "${MAPPING[$uid]+exist}" ]; then
         user=${MAPPING[$uid]}
       fi
-      comm=$(strings /proc/${pid}/cmdline || echo "UNKNOWN")
-      [ ! -z "$comm" ] && comm=$(echo "$comm" | head -n 1) || comm="UNKNOWN"
-      gpus[${uuid}]="${gpus[${uuid}]}, ${user}, ${comm}, ${pid}, ${memory}"
+      comm=$(strings /proc/${pid}/cmdline || echo "Unkonwn")
+      [ "$SHOW_FULLCMD" -eq 0 ] && comm=$(echo "$comm" | awk '{print $1}' | awk -F '/' '{print $NF}')
+      [ ! -z "$comm" ] && comm=$(echo "$comm" | head -n 1) || comm="Unkonwn"
+      gpus[${uuid}]="${gpus[${uuid}]}:,:${user}:,:${comm}:,:${pid}:,:${memory}"
     done <<< "${per_info}"
   fi
 
@@ -244,7 +250,7 @@ while true; do
   fi
 
   for uuid in "${gpus_order[@]}"; do
-    out+=$(awk -F ', ' -v SHOW_PID="${SHOW_PID}" -v SHOW_POWER="${SHOW_POWER}" -v SHOW_CMD="${SHOW_CMD}" -v SHOW_USER="${SHOW_USER}" -v SHOW_FAN=${SHOW_FAN} '
+    out+=$(awk -F ':,:' -v SHOW_PID="${SHOW_PID}" -v SHOW_POWER="${SHOW_POWER}" -v SHOW_CMD="${SHOW_CMD}" -v SHOW_USER="${SHOW_USER}" -v SHOW_FAN=${SHOW_FAN} '
   function bold() {
     printf "\033[1m";
   }
