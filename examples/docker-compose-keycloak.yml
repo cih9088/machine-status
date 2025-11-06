@@ -18,7 +18,7 @@ services:
 
   mstat-exporter:
     container_name: mstat-exporter
-    image: cih9088/machine-status:0.3.7
+    image: cih9088/machine-status:0.3.8
     ports:
       - 9200:9200
     pid: host
@@ -34,7 +34,7 @@ services:
 
   mstat-server:
     container_name: mstat-server
-    image: cih9088/machine-status:0.3.7
+    image: cih9088/machine-status:0.3.8
     ports:
       - 9201:9201
     command:
