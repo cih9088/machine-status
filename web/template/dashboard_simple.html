@@ -19,6 +19,8 @@
             console.log("Connection closed")
             var item = document.getElementById("notice")
             item.innerHTML = "<b>Connection closed</b>";
+            window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+            alert("Connection closed")
           };
           conn.onmessage = function (evt) {
             var messages = JSON.parse(evt.data);
